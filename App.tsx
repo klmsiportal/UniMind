@@ -6,7 +6,33 @@ import Solver from './pages/Solver';
 import Explore from './pages/Explore';
 import Login from './pages/Login';
 import Premium from './pages/Premium';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Loader2 } from 'lucide-react';
+
+const ProtectedRoutes = () => {
+  const { loading } = useAuth();
+  
+  if (loading) {
+     return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+            <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+            <p className="text-slate-400 font-medium">Initializing UniMind...</p>
+        </div>
+     );
+  }
+  
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/solve" element={<Solver />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/premium" element={<Premium />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
+  );
+}
 
 const App: React.FC = () => {
   return (
@@ -14,17 +40,7 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/*" element={
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/solve" element={<Solver />} />
-                <Route path="/explore" element={<Explore />} />
-                <Route path="/premium" element={<Premium />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Layout>
-          } />
+          <Route path="/*" element={<ProtectedRoutes />} />
         </Routes>
       </Router>
     </AuthProvider>

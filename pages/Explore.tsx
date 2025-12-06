@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Globe, ExternalLink, GraduationCap, Loader2 } from 'lucide-react';
+import { Search, MapPin, Globe, ExternalLink, GraduationCap, Loader2, TrendingUp, BookOpen } from 'lucide-react';
 import { exploreTopic, generateQuiz } from '../services/geminiService';
 import { SearchResult } from '../types';
 
@@ -10,9 +10,12 @@ const Explore: React.FC = () => {
   const [quiz, setQuiz] = useState<any[] | null>(null);
   const [activeTab, setActiveTab] = useState<'search' | 'quiz'>('search');
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const handleSearch = async (e: React.FormEvent, overrideQuery?: string) => {
+    if (e) e.preventDefault();
+    const q = overrideQuery || query;
+    if (!q.trim()) return;
+
+    if (overrideQuery) setQuery(overrideQuery);
 
     setLoading(true);
     setResult(null);
@@ -20,10 +23,10 @@ const Explore: React.FC = () => {
 
     try {
       if (activeTab === 'search') {
-        const data = await exploreTopic(query);
+        const data = await exploreTopic(q);
         setResult(data);
       } else {
-        const quizData = await generateQuiz(query);
+        const quizData = await generateQuiz(q);
         setQuiz(quizData);
       }
     } catch (error) {
@@ -32,6 +35,21 @@ const Explore: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const trendingTopics = [
+    "Artificial Intelligence Engineering",
+    "Sustainable Architecture Universities",
+    "Quantum Computing Basics",
+    "Medical School Requirements UK",
+    "MBA Programs in USA"
+  ];
+
+  const quickQuizzes = [
+    "Calculus I Derivatives",
+    "World History 1945-Present",
+    "Organic Chemistry Nomenclature",
+    "Python Programming Basics"
+  ];
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -62,7 +80,7 @@ const Explore: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="relative group">
+        <form onSubmit={handleSearch} className="relative group mb-8">
           <input
             type="text"
             value={query}
@@ -88,6 +106,44 @@ const Explore: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
             <p>Consulting the archives...</p>
           </div>
+        )}
+
+        {!loading && !result && !quiz && (
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-300">
+                        <TrendingUp className="w-5 h-5" /> Trending Searches
+                    </h3>
+                    <div className="space-y-2">
+                        {trendingTopics.map((topic, i) => (
+                            <button 
+                                key={i}
+                                onClick={() => { setActiveTab('search'); handleSearch(null as any, topic); }}
+                                className="block w-full text-left p-3 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-sm"
+                            >
+                                {topic}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-emerald-300">
+                        <BookOpen className="w-5 h-5" /> Popular Quizzes
+                    </h3>
+                    <div className="space-y-2">
+                        {quickQuizzes.map((topic, i) => (
+                            <button 
+                                key={i}
+                                onClick={() => { setActiveTab('quiz'); handleSearch(null as any, topic); }}
+                                className="block w-full text-left p-3 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-sm"
+                            >
+                                {topic}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
         )}
 
         {/* Search Results Display */}

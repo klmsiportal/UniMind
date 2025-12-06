@@ -11,9 +11,13 @@ const Solver: React.FC = () => {
   
   // Load initial messages from local storage if available
   const loadMessages = () => {
-    const saved = localStorage.getItem('chat_history');
-    if (saved) {
-        try { return JSON.parse(saved); } catch (e) { return null; }
+    try {
+        const saved = localStorage.getItem('chat_history');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error("Failed to load history", e);
     }
     return null;
   };
@@ -125,9 +129,11 @@ const Solver: React.FC = () => {
     } finally {
       setIsLoading(false);
       // Save solve to recent activity
-      const activity = { type: 'solve', preview: userMsg.content.substring(0, 30) + "...", date: new Date().toLocaleDateString() };
-      const currentActivity = JSON.parse(localStorage.getItem('recent_activity') || '[]');
-      localStorage.setItem('recent_activity', JSON.stringify([activity, ...currentActivity].slice(0, 5)));
+      try {
+        const activity = { type: 'solve', preview: userMsg.content.substring(0, 30) + "...", date: new Date().toLocaleDateString() };
+        const currentActivity = JSON.parse(localStorage.getItem('recent_activity') || '[]');
+        localStorage.setItem('recent_activity', JSON.stringify([activity, ...currentActivity].slice(0, 5)));
+      } catch (e) {}
     }
   };
 
@@ -140,6 +146,7 @@ const Solver: React.FC = () => {
 
   // Basic Text-to-Speech
   const speak = (text: string) => {
+    if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text.replace(/\*/g, '')); // Strip markdown
     utterance.rate = 1.1;
@@ -259,7 +266,7 @@ const Solver: React.FC = () => {
               )}
             </div>
             
-            {/* Avatar for User (Optional or simple placeholder) */}
+            {/* Avatar for User */}
             {msg.role === 'user' && (
                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 ml-3 mt-1 overflow-hidden">
                      {user?.photoURL ? <img src={user.photoURL} alt="Me" /> : <div className="w-2 h-2 bg-indigo-400 rounded-full" />}
