@@ -27,22 +27,24 @@ export const solveProblem = async (
     const base64Data = imageBase64.split(',')[1] || imageBase64;
     parts.push({
       inlineData: {
-        mimeType: 'image/jpeg', // Assuming JPEG for simplicity, or detect from string
+        mimeType: 'image/jpeg', // Assuming JPEG/PNG for simplicity
         data: base64Data
       }
     });
   }
 
-  parts.push({ text: text || "Analyze this image and solve the problem step-by-step." });
+  const promptText = text || "Analyze this image and solve the problem step-by-step.";
+  parts.push({ text: promptText });
 
   // Config setup
   const config: any = {
-    systemInstruction: "You are an expert academic tutor. Provide clear, step-by-step solutions. If the input is a math problem, show the work. Use Markdown for formatting. If the user provides an image, carefully transcribe and solve it.",
+    systemInstruction: "You are 'UniMind', a world-class academic tutor. Your goal is to explain complex math, science, and literature problems clearly. Use Markdown for formatting. \n- Use **bold** for key terms and final answers.\n- Use code blocks ``` for programming or complex equations.\n- Break down math problems into: 1. Analysis, 2. Step-by-Step Calculation, 3. Final Answer.\n- Be encouraging and concise.",
+    temperature: 0.7,
   };
 
   // Enable thinking for deep mode (using 2.5 flash which supports thinkingConfig)
   if (mode === SolveMode.DEEP) {
-    config.thinkingConfig = { thinkingBudget: 2048 }; 
+    config.thinkingConfig = { thinkingBudget: 4096 }; // Higher budget for better reasoning
   }
 
   try {
@@ -55,7 +57,7 @@ export const solveProblem = async (
     return response.text || "I couldn't generate a solution. Please try again.";
   } catch (error) {
     console.error("Gemini Solve Error:", error);
-    throw error;
+    return "I encountered an error connecting to the AI. Please check your internet connection or try again later.";
   }
 };
 
@@ -68,7 +70,7 @@ export const exploreTopic = async (query: string): Promise<{ text: string; sourc
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Find detailed information about: ${query}. Focus on academic reputation, key programs, and student life if applicable.`,
+      contents: `Find detailed, up-to-date information about: ${query}. Focus on academic reputation, admission requirements, key programs, and student life. Format with **bold** headers.`,
       config: {
         tools: [{ googleSearch: {} }], // Enable Google Search
       }
@@ -82,7 +84,10 @@ export const exploreTopic = async (query: string): Promise<{ text: string; sourc
       .map((chunk: any) => chunk.web ? { title: chunk.web.title, url: chunk.web.uri } : null)
       .filter((s: any) => s !== null);
 
-    return { text, sources };
+    // Remove duplicates based on URL
+    const uniqueSources = Array.from(new Map(sources.map((item:any) => [item['url'], item])).values());
+
+    return { text, sources: uniqueSources };
   } catch (error) {
     console.error("Gemini Explore Error:", error);
     throw error;
@@ -98,7 +103,7 @@ export const generateQuiz = async (subject: string): Promise<any> => {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Create a short quiz with 3 multiple choice questions for the subject: ${subject}.`,
+        contents: `Create a challenging but fair quiz with 5 multiple choice questions for the subject: ${subject}.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
