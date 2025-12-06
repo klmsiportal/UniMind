@@ -1,0 +1,8 @@
+{
+  "name": "UniMind - AI Study Companion",
+  "description": "A powerful AI study assistant inspired by Gauth. Solve complex homework problems with reasoning, explore universities using real-time search, and master your subjects.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
